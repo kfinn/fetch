@@ -16,6 +16,9 @@ Input :: #import "Input";
 window_width :: 1280;
 window_height :: 768;
 
+TICK_DURATION :: 1.0 / 60.0;
+GRAVITY :: 1000;
+
 main :: () {
   window := Window_Creation.create_window(window_name="Fetch", width=window_width, height=window_height);
   Simp.simp_init(window, window_width, window_height, window_width, window_height);
@@ -80,26 +83,63 @@ main :: () {
     .{}
   );
 
+  last_clock_tick := get_time();
   should_quit_game := false;
+  mouse_is_down := false;
   while !should_quit_game {
-    Simp.update_window(window, window_width, window_height, window_width, window_height);
-    Input.update_window_events();
-
-    render(window, entity_manager, camera);
-
-    for event: Input.events_this_frame {
-      if event.type == .QUIT {
-          should_quit_game = true;
-          break;
+    current_time := get_time();
+    if last_clock_tick + TICK_DURATION > current_time {
+      continue;
+    } else {
+      last_clock_tick += TICK_DURATION;
+      while last_clock_tick + TICK_DURATION <= current_time {
+        last_clock_tick += TICK_DURATION;
       }
     }
 
-    sleep_milliseconds(10);
+    Input.update_window_events();
+
+    for event: Input.events_this_frame {
+      if event.type == {
+        case .QUIT;
+          should_quit_game = true;
+        case .KEYBOARD;
+          if event.key_code == .MOUSE_BUTTON_LEFT {
+            mouse_is_down = xx event.key_pressed;
+          }
+      }
+    }
+
+    if mouse_is_down {
+      mouse_position_x, mouse_position_y := Window_Creation.get_mouse_pointer_position(window, true);
+
+      gamespace_mouse_position_x := -camera_transform.translation.x + mouse_position_x;
+      gamespace_mouse_position_y := -camera_transform.translation.y + mouse_position_y;
+
+      ball_ball_body.velocity.x = 0.5 * (gamespace_mouse_position_x - ball_transform.translation.x) / TICK_DURATION;
+      ball_ball_body.velocity.y = 0.5 * (gamespace_mouse_position_y - ball_transform.translation.y) / TICK_DURATION;
+
+      ball_transform.translation.x = gamespace_mouse_position_x;
+      ball_transform.translation.y = gamespace_mouse_position_y;
+    } else {
+      frame_start_velocity_y := ball_ball_body.velocity.y;
+      frame_end_velocity_y := frame_start_velocity_y - TICK_DURATION * GRAVITY;
+
+      effective_velocity_y := (frame_start_velocity_y + frame_end_velocity_y) / 2.0;
+
+      ball_transform.translation.x += TICK_DURATION * ball_ball_body.velocity.x;
+      ball_transform.translation.y += TICK_DURATION * effective_velocity_y;
+
+      ball_ball_body.velocity.y = frame_end_velocity_y;
+    }
+
+    render(window, entity_manager, camera);
     reset_temporary_storage();
   }
 }
 
 render :: (window: $Window, entity_manager: EntityManager, camera: *Entity) {
+  Simp.update_window(window, window_width, window_height, window_width, window_height);
   camera_transform := find_components_by_entity_id(entity_manager, Transform, camera.id)[0];
   Simp.clear_render_target(.2, .3, .3, 1);
   
