@@ -3,6 +3,10 @@
 #import "String";
 
 #run {
+  build_workspace_options := get_build_options();
+  build_workspace_options.output_type = .NO_OUTPUT;
+  set_build_options_dc(.{do_output=false});
+
   target_workspace := compiler_create_workspace("fetch");
   if !target_workspace {
     print("Workspace creation failed.\n");
@@ -31,8 +35,4 @@
   }
 
   compiler_end_intercept(target_workspace);
-
-  build_workspace_options := get_build_options();
-  build_workspace_options.output_type = .NO_OUTPUT;
-  set_build_options(build_workspace_options);
 };
