@@ -6,6 +6,9 @@ EntityManager :: struct {
 
   transforms: [..]Transform;
   unique_transforms_by_entity_id: Table(int, *Transform);
+
+  ball_bodies: [..]BallBody;
+  unique_ball_bodies_by_entity_id: Table(int, *BallBody);
 }
 
 init :: (using entity_manager: *EntityManager) {
@@ -89,6 +92,19 @@ add_component :: (
           *has_unique_components_by_entity_id_definition_string_builder,
           "true;\n"
         );
+      case BallBody;
+        print_to_builder(
+          *components_definition_string_builder,
+          "*ball_bodies;\n"
+        );
+        print_to_builder(
+          *unique_components_by_entity_id_definition_string_builder,
+          "*unique_ball_bodies_by_entity_id;\n"
+        );
+        print_to_builder(
+          *has_unique_components_by_entity_id_definition_string_builder,
+          "true;\n"
+        );
       case;
         assert(false, "add_component called with invalid Component type: %", ConcreteComponent);
     }
@@ -135,6 +151,18 @@ find_components_by_entity_id :: (
     if obstacle_body_found {
       result: [1]*ObstacleBody;
       result[0] = obstacle_body;
+      return result;
+    } else {
+      return.[];
+    }
+  } else #if ConcreteComponent == BallBody {
+    ball_body, ball_body_found := table_find(
+      unique_obstacle_bodies_by_entity_id,
+      entity_id
+    );
+    if ball_body_found {
+      result: [1]*BallBody;
+      result[0] = ball_body;
       return result;
     } else {
       return.[];

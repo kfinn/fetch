@@ -1,6 +1,1 @@
-Transform :: Component(
-  struct {
-    x: float;
-    y: float;
-  }
-);
+Transform :: Component(struct { translation: Vector2; });
