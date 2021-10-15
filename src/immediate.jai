@@ -1,6 +1,4 @@
 immediate_circle :: (center: Vector2, radius: float, color: Vector4, detail := 12) {
-  Simp.CheckSpace(xx (detail * 3));
-
   d_theta := TAU / detail;
   initial_x := radius + center.x;
   initiial_y := center.y;
