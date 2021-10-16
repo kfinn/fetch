@@ -1,1 +1,5 @@
-Transform :: Component(struct { translation: Vector2; });
+Transform :: Component(
+  struct {
+    translation: Vector2;
+  }
+);

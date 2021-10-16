@@ -1,4 +1,4 @@
-EntityManager :: struct {
+State :: struct {
   entities: [..]Entity;
   
   obstacle_bodies: [..]ObstacleBody;
@@ -9,9 +9,12 @@ EntityManager :: struct {
 
   ball_bodies: [..]BallBody;
   unique_ball_bodies_by_entity_id: Table(int, *BallBody);
+
+  game_input: GameInput;
+  camera_transform: Transform;
 }
 
-init :: (using entity_manager: *EntityManager) {
+init :: (using state: *State) {
   remember_allocators(*entities);
   remember_allocators(*obstacle_bodies);
   remember_allocators(*transforms);
@@ -20,25 +23,24 @@ init :: (using entity_manager: *EntityManager) {
   init(*unique_transforms_by_entity_id);
 }
 
-deinit :: (using entity_manager: *EntityManager) {
+deinit :: (using state: *State) {
   uninit(*unique_obstacle_bodies_by_entity_id);
   uninit(*unique_transforms_by_entity_id);
 }
 
-add_entity :: (using entity_manager: *EntityManager) -> *Entity {
+add_entity :: (using state: *State) -> *Entity {
   id := entities.count + 1;
   entity := array_add(*entities);
-  entity.entity_manager = entity_manager;
   entity.id = id;
   return entity;
 }
 
-find_entity :: (using entity_manager: EntityManager, id: int) -> *Entity {
+find_entity :: (using state: State, id: int) -> *Entity {
   return *entities[id];
 }
 
 add_component :: (
-  using entity_manager: *EntityManager,
+  using state: *State,
   entity: *Entity,
   $ConcreteComponent: Type,
   data: ConcreteComponent.Data
@@ -126,48 +128,22 @@ add_component :: (
   return component;
 }
 
-find_components_by_entity_id :: (
-  using entity_manager: EntityManager,
+find_transform_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=Transform, index_name="unique_transforms_by_entity_id");
+find_obstacle_body_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=ObstacleBody, index_name="unique_obstacle_bodies_by_entity_id");
+find_ball_body_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=BallBody, index_name="unique_ball_bodies_by_entity_id");
+
+#scope_file
+
+find_component_by_entity_id :: (
+  using state: State,
+  entity_id: int,
   $ConcreteComponent: Type,
-  entity_id: int
-) -> []*ConcreteComponent {
-  #if ConcreteComponent == Transform {
-    transform, transform_found := table_find(
-      unique_transforms_by_entity_id,
-      entity_id
-    );
-    if transform_found {
-      result: [1]*Transform;
-      result[0] = transform;
-      return result;
-    } else {
-      return.[];
-    }
-  } else #if ConcreteComponent == ObstacleBody {
-    obstacle_body, obstacle_body_found := table_find(
-      unique_obstacle_bodies_by_entity_id,
-      entity_id
-    );
-    if obstacle_body_found {
-      result: [1]*ObstacleBody;
-      result[0] = obstacle_body;
-      return result;
-    } else {
-      return.[];
-    }
-  } else #if ConcreteComponent == BallBody {
-    ball_body, ball_body_found := table_find(
-      unique_obstacle_bodies_by_entity_id,
-      entity_id
-    );
-    if ball_body_found {
-      result: [1]*BallBody;
-      result[0] = ball_body;
-      return result;
-    } else {
-      return.[];
-    }
-  } else {
-    #assert false, tprint("find_components_by_entity_id called with invalid Component type: %", ConcreteComponent);
-  }
+  $index_name: string
+) -> *ConcreteComponent {
+  #insert #run sprint("components_by_entity_id := %;\n", index_name);
+  component, component_found := table_find(
+    components_by_entity_id,
+    entity_id
+  );
+  if component_found then return component; else return null;
 }
