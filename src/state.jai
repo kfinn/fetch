@@ -1,8 +1,8 @@
 State :: struct {
   entities: [..]Entity;
   
-  obstacle_bodies: [..]ObstacleBody;
-  unique_obstacle_bodies_by_entity_id: Table(int, *ObstacleBody);
+  collision_bodies: [..]CollisionBody;
+  unique_collision_bodies_by_entity_id: Table(int, *CollisionBody);
 
   transforms: [..]Transform;
   unique_transforms_by_entity_id: Table(int, *Transform);
@@ -16,15 +16,15 @@ State :: struct {
 
 init :: (using state: *State) {
   remember_allocators(*entities);
-  remember_allocators(*obstacle_bodies);
+  remember_allocators(*collision_bodies);
   remember_allocators(*transforms);
 
-  init(*unique_obstacle_bodies_by_entity_id);
+  init(*unique_collision_bodies_by_entity_id);
   init(*unique_transforms_by_entity_id);
 }
 
 deinit :: (using state: *State) {
-  uninit(*unique_obstacle_bodies_by_entity_id);
+  uninit(*unique_collision_bodies_by_entity_id);
   uninit(*unique_transforms_by_entity_id);
 }
 
@@ -81,14 +81,14 @@ add_component :: (
           *has_unique_components_by_entity_id_definition_string_builder,
           "true;\n"
         );
-      case ObstacleBody;
+      case CollisionBody;
         print_to_builder(
           *components_definition_string_builder,
-          "*obstacle_bodies;\n"
+          "*collision_bodies;\n"
         );
         print_to_builder(
           *unique_components_by_entity_id_definition_string_builder,
-          "*unique_obstacle_bodies_by_entity_id;\n"
+          "*unique_collision_bodies_by_entity_id;\n"
         );
         print_to_builder(
           *has_unique_components_by_entity_id_definition_string_builder,
@@ -129,7 +129,7 @@ add_component :: (
 }
 
 find_transform_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=Transform, index_name="unique_transforms_by_entity_id");
-find_obstacle_body_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=ObstacleBody, index_name="unique_obstacle_bodies_by_entity_id");
+find_collision_body_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=CollisionBody, index_name="unique_collision_bodies_by_entity_id");
 find_ball_body_by_entity_id :: #bake_arguments find_component_by_entity_id(ConcreteComponent=BallBody, index_name="unique_ball_bodies_by_entity_id");
 
 #scope_file

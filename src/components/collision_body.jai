@@ -1,16 +1,16 @@
-ObstacleBody :: Component(
+CollisionBody :: Component(
   struct {
-    using aabb: AABB;
+    aabb: AABB;
     edges: AABBEdges;
   }
 );
 
-update_obstacle_body_edges :: (using obstacle_body: *ObstacleBody, transform: *Transform) {
+update_collision_body_edges :: (using collision_body: *CollisionBody, transform: *Transform) {
   current_aabb_edges_input: AABBEdgesInput;
   current_aabb_edges_input.position_absolute = transform.translation;
-  current_aabb_edges_input.aabb = obstacle_body.aabb;
+  current_aabb_edges_input.aabb = collision_body.aabb;
 
-  if current_aabb_edges_input == obstacle_body.edges.aabb_edges_input {
+  if current_aabb_edges_input == collision_body.edges.aabb_edges_input {
     return;
   }
 

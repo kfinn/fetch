@@ -8,7 +8,7 @@ Input :: #import "Input";
 #load "state.jai";
 #load "entity.jai";
 #load "components/component.jai";
-#load "components/obstacle_body.jai";
+#load "components/collision_body.jai";
 #load "components/transform.jai";
 #load "components/ball_body.jai";
 #load "components/game_input.jai";
@@ -33,17 +33,17 @@ main :: () {
   state.camera_transform.translation.x = window_width / 2;
   state.camera_transform.translation.y = window_height / 2;
 
-  west_wall := add_entity(*state);
-  west_wall_transform := add_component(
+  left_wall := add_entity(*state);
+  left_wall_transform := add_component(
     *state,
-    west_wall,
+    left_wall,
     Transform,
     .{.{-505, 0}}
   );
-  west_wall_obstacle_body := add_component(
+  left_wall_obstacle_body := add_component(
     *state,
-    west_wall,
-    ObstacleBody,
+    left_wall,
+    CollisionBody,
     .{.{10, 500}, .{}}
   );
 
@@ -57,22 +57,22 @@ main :: () {
   floor_obstacle_body := add_component(
     *state,
     floor,
-    ObstacleBody,
+    CollisionBody,
     .{.{1000, 10}, .{}}
   );
 
 
-  east_wall := add_entity(*state);
-  east_wall_transform := add_component(
+  right_wall := add_entity(*state);
+  right_wall_transform := add_component(
     *state,
-    east_wall,
+    right_wall,
     Transform,
     .{.{505, 0}}
   );
-  east_wall_obstacle_body := add_component(
+  right_wall_obstacle_body := add_component(
     *state,
-    east_wall,
-    ObstacleBody,
+    right_wall,
+    CollisionBody,
     .{.{10, 500}, .{}}
   );
 
@@ -81,6 +81,12 @@ main :: () {
     *state,
     ball,
     Transform,
+    .{}
+  );
+  ball_collision_body := add_component(
+    *state,
+    ball,
+    CollisionBody,
     .{}
   );
   ball_ball_body := add_component(
@@ -105,7 +111,7 @@ main :: () {
     }
 
     input(window, *state);
-    simulate(*state);
+    simulate(*state, current_tick_duration);
     render(window, state);
     reset_temporary_storage();
   }
@@ -131,14 +137,15 @@ input :: (window: $Window, using state: *State) {
   }
 }
 
-simulate :: (state: *State) {
-  for * obstacle_body: state.obstacle_bodies {
-    transform := find_transform_by_entity_id(<<state, obstacle_body.entity_id);
-    update_obstacle_body_edges(obstacle_body, transform);
+simulate :: (state: *State, dt: float) {
+  for * collision_body: state.collision_bodies {
+    transform := find_transform_by_entity_id(<<state, collision_body.entity_id);
+    update_collision_body_edges(collision_body, transform);
   }
   
   for * ball_body : state.ball_bodies {
     ball_transform := find_transform_by_entity_id(<<state, ball_body.entity_id);
+    ball_collision_body := find_collision_body_by_entity_id(<<state, ball_body.entity_id);
 
     if state.game_input.mouse_is_down {
       ball_body.velocity.x = 0.5 * (state.game_input.mouse_position.x - ball_transform.translation.x) / TICK_DURATION;
@@ -147,18 +154,15 @@ simulate :: (state: *State) {
       ball_transform.translation.x = state.game_input.mouse_position.x;
       ball_transform.translation.y = state.game_input.mouse_position.y;
     } else {
-      frame_start_velocity_y := ball_body.velocity.y;
-      frame_end_velocity_y := frame_start_velocity_y - TICK_DURATION * GRAVITY;
-
-      effective_velocity_y := (frame_start_velocity_y + frame_end_velocity_y) / 2.0;
-
-      translation_x_after_freefall := ball_transform.translation.x + TICK_DURATION * ball_body.velocity.x;
-      translation_y_after_freefall := ball_transform.translation.y + TICK_DURATION * effective_velocity_y;
-
-      ball_transform.translation.x = translation_x_after_freefall;
-      ball_transform.translation.y = translation_y_after_freefall;
-
-      ball_body.velocity.y = frame_end_velocity_y;
+      update_ball_body_translation_after_freefall(ball_body, ball_transform, ball_collision_body, dt);
+      update_ball_body_collisions(
+        ball_body,
+        ball_transform,
+        ball_collision_body,
+        state.collision_bodies
+      );
+      update_nearest_collision(ball_body);
+      update_transform_due_to_physics(ball_body, ball_transform);
     }
   }
 }
@@ -168,13 +172,16 @@ render :: (window: $Window, using state: State) {
   Simp.clear_render_target(.2, .3, .3, 1);
   
   Simp.set_shader_for_color();
-  for obstacle_body: obstacle_bodies {
-    transform := find_transform_by_entity_id(state, obstacle_body.entity_id);
+  for collision_body: collision_bodies {
+    ball_body := find_ball_body_by_entity_id(state, collision_body.entity_id);
+    if ball_body then continue;
+
+    transform := find_transform_by_entity_id(state, collision_body.entity_id);
     Simp.immediate_quad(
-      camera_transform.translation.x + transform.translation.x - obstacle_body.width / 2,
-      camera_transform.translation.y + transform.translation.y - obstacle_body.height / 2,
-      camera_transform.translation.x + transform.translation.x + obstacle_body.width / 2,
-      camera_transform.translation.y + transform.translation.y + obstacle_body.height / 2,
+      camera_transform.translation.x + transform.translation.x - collision_body.aabb.width / 2,
+      camera_transform.translation.y + transform.translation.y - collision_body.aabb.height / 2,
+      camera_transform.translation.x + transform.translation.x + collision_body.aabb.width / 2,
+      camera_transform.translation.y + transform.translation.y + collision_body.aabb.height / 2,
       .{0, 1, 0, 1}
     );
   }
