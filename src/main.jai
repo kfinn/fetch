@@ -20,7 +20,7 @@ window_width :: 1280;
 window_height :: 768;
 
 TICK_DURATION :: 1.0 / 120.0;
-GRAVITY :: 2000;
+GRAVITY :: 1000;
 
 main :: () {
   window := Window_Creation.create_window(window_name="Fetch", width=window_width, height=window_height);
@@ -154,7 +154,12 @@ simulate :: (state: *State, dt: float) {
       ball_transform.translation.x = state.game_input.mouse_position.x;
       ball_transform.translation.y = state.game_input.mouse_position.y;
     } else {
-      update_ball_body_translation_after_freefall(ball_body, ball_transform, ball_collision_body, dt);
+      update_ball_body_translation_after_freefall(
+        ball_body,
+        ball_transform,
+        ball_collision_body,
+        dt
+      );
       update_ball_body_collisions(
         ball_body,
         ball_transform,

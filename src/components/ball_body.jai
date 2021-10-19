@@ -76,9 +76,35 @@ update_ball_body_collisions :: (
     }
 
     if velocity.x > 0 {
+      if
+        right_edge.x < other_collision_body.edges.left_edge.x &&
+        right_edge.x + x_distance > other_collision_body.edges.left_edge.x &&
+        right_edge.min_y < other_collision_body.edges.left_edge.max_y &&
+        right_edge.max_y > other_collision_body.edges.left_edge.min_y
+      {
+        collision := array_add(*updated_collisions);
 
+        x_distance_traveled := other_collision_body.edges.left_edge.x - right_edge.x;
+        proportional_distance_traveled := x_distance_traveled / x_distance;
+
+        collision.normal = .LEFT;
+        collision.distance_traveled = total_distance * proportional_distance_traveled;
+      }
     } else if velocity.x < 0 {
+      if
+        left_edge.x > other_collision_body.edges.right_edge.x &&
+        left_edge.x + x_distance < other_collision_body.edges.right_edge.x &&
+        left_edge.min_y < other_collision_body.edges.right_edge.max_y &&
+        left_edge.max_y > other_collision_body.edges.right_edge.min_y
+      {
+        collision := array_add(*updated_collisions);
 
+        x_distance_traveled := other_collision_body.edges.right_edge.x - left_edge.x;
+        proportional_distance_traveled := x_distance_traveled / x_distance;
+
+        collision.normal = .RIGHT;
+        collision.distance_traveled = total_distance * proportional_distance_traveled;
+      }
     }
 
     collisions = updated_collisions;
@@ -107,15 +133,22 @@ update_transform_due_to_physics :: (using ball_body: *BallBody, transform: *Tran
       ball_body.translation_after_freefall.y * ball_body.translation_after_freefall.y
     );
 
-    if ball_body.nearest_collision.normal == {
+
+    proportional_distance_traveled := ball_body.nearest_collision.distance_traveled / freefall_distance_traveled;
+    if #complete ball_body.nearest_collision.normal == {
       case .UP; case .DOWN;
         ball_body.velocity.y = 0;
         
         transform.translation.x = ball_body.translation_after_freefall.x;
-        actual_dy := (ball_body.nearest_collision.distance_traveled / freefall_distance_traveled) * freefall_dy;
+
+        actual_dy := proportional_distance_traveled * freefall_dy;
         transform.translation.y += actual_dy;
-      case;
-        transform.translation.x = ball_body.translation_after_freefall.x;
+      case .LEFT; case .RIGHT;
+        ball_body.velocity.x = 0;
+        
+        actual_dx := proportional_distance_traveled * freefall_dx;
+        transform.translation.x += actual_dx;
+
         transform.translation.y = ball_body.translation_after_freefall.y;
     }
   } else {
