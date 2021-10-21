@@ -45,8 +45,8 @@ update_ball_body_collisions :: (
 
     if velocity.y > 0 {
       if
-        top_edge.y < other_collision_body.edges.bottom_edge.y &&
-        top_edge.y + y_distance > other_collision_body.edges.bottom_edge.y &&
+        top_edge.y <= other_collision_body.edges.bottom_edge.y &&
+        top_edge.y + y_distance >= other_collision_body.edges.bottom_edge.y &&
         top_edge.min_x < other_collision_body.edges.bottom_edge.max_x &&
         top_edge.max_x > other_collision_body.edges.bottom_edge.min_x
       {
@@ -60,8 +60,8 @@ update_ball_body_collisions :: (
       }
     } else if velocity.y < 0 {
       if
-        bottom_edge.y > other_collision_body.edges.top_edge.y &&
-        bottom_edge.y + y_distance < other_collision_body.edges.top_edge.y &&
+        bottom_edge.y >= other_collision_body.edges.top_edge.y &&
+        bottom_edge.y + y_distance <= other_collision_body.edges.top_edge.y &&
         bottom_edge.min_x < other_collision_body.edges.top_edge.max_x &&
         bottom_edge.max_x > other_collision_body.edges.top_edge.min_x
       {
@@ -77,8 +77,8 @@ update_ball_body_collisions :: (
 
     if velocity.x > 0 {
       if
-        right_edge.x < other_collision_body.edges.left_edge.x &&
-        right_edge.x + x_distance > other_collision_body.edges.left_edge.x &&
+        right_edge.x <= other_collision_body.edges.left_edge.x &&
+        right_edge.x + x_distance >= other_collision_body.edges.left_edge.x &&
         right_edge.min_y < other_collision_body.edges.left_edge.max_y &&
         right_edge.max_y > other_collision_body.edges.left_edge.min_y
       {
@@ -92,8 +92,8 @@ update_ball_body_collisions :: (
       }
     } else if velocity.x < 0 {
       if
-        left_edge.x > other_collision_body.edges.right_edge.x &&
-        left_edge.x + x_distance < other_collision_body.edges.right_edge.x &&
+        left_edge.x >= other_collision_body.edges.right_edge.x &&
+        left_edge.x + x_distance <= other_collision_body.edges.right_edge.x &&
         left_edge.min_y < other_collision_body.edges.right_edge.max_y &&
         left_edge.max_y > other_collision_body.edges.right_edge.min_y
       {

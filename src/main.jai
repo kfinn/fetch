@@ -87,7 +87,7 @@ main :: () {
     *state,
     ball,
     CollisionBody,
-    .{}
+    .{aabb=.{20, 20}}
   );
   ball_ball_body := add_component(
     *state,
