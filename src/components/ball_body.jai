@@ -129,21 +129,19 @@ update_transform_due_to_physics :: (using ball_body: *BallBody, transform: *Tran
     freefall_dy := ball_body.translation_after_freefall.y - transform.translation.y;
 
     freefall_distance_traveled := sqrt(
-      ball_body.translation_after_freefall.x * ball_body.translation_after_freefall.x +
-      ball_body.translation_after_freefall.y * ball_body.translation_after_freefall.y
+      freefall_dx * freefall_dx +
+      freefall_dy * freefall_dy
     );
 
-
     proportional_distance_traveled := ball_body.nearest_collision.distance_traveled / freefall_distance_traveled;
-    if #complete ball_body.nearest_collision.normal == {
-      case .UP; case .DOWN;
+    if ball_body.nearest_collision.normal == .UP || ball_body.nearest_collision.normal == .DOWN {
         ball_body.velocity.y = 0;
         
         transform.translation.x = ball_body.translation_after_freefall.x;
 
         actual_dy := proportional_distance_traveled * freefall_dy;
         transform.translation.y += actual_dy;
-      case .LEFT; case .RIGHT;
+    } else {
         ball_body.velocity.x = 0;
         
         actual_dx := proportional_distance_traveled * freefall_dx;
